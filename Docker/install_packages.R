@@ -23,4 +23,6 @@ install.packages("rgeos")
 install.packages("RColorBrewer")
 install.packages("DT")
 install.packages("leafpop")
+install.packages('openssl')
+install.packages('jose')
 
