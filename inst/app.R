@@ -39,6 +39,8 @@ packages(rgeos)
 packages(RColorBrewer)
 packages(DT)
 packages(leafpop)
+packages(openssl)
+packages(jose)
 
 #INLA package is very heavy
 #So, INLA packages must be downloaded separately
@@ -66,14 +68,17 @@ shinyApp(
                 fluidRow(
                   titlePanel("Database Connection"),
                   sidebarPanel(
-                    textInput("ip","IP","",placeholder = 'xxx.xxx.xxx.xxx')
-                    ,uiOutput("sqltype")
-                    ,textInput("CDMschema","CDM Database schema","",placeholder = 'yourCdmDb.schema')
-                    ,textInput("Resultschema","CDM Result schema","",placeholder = 'yourCdmResultDb.schema')
-                    ,textInput("usr","USER","")
-                    ,passwordInput("pw","PASSWORD","")
-                    ,textInput('WebapiDBserver','WebAPI DB Server IP','',placeholder = 'xxx.xxx.xxx.xxx')
-                    ,textInput('WebapiDBschema','WebAPI DB Schema','',placeholder = 'yourWebAPIDb.schema')
+                    # input information need to connect database
+                    selectInput("cdm", "Select input",
+                                 c())
+                    # textInput("ip","IP","",placeholder = 'xxx.xxx.xxx.xxx')
+                    # ,uiOutput("sqltype")
+                    # ,textInput("CDMschema","CDM Database schema","",placeholder = 'yourCdmDb.schema')
+                    # ,textInput("Resultschema","CDM Result schema","",placeholder = 'yourCdmResultDb.schema')
+                    # ,textInput("usr","USER","")
+                    # ,passwordInput("pw","PASSWORD","")
+                    # ,textInput('WebapiDBserver','WebAPI DB Server IP','',placeholder = 'xxx.xxx.xxx.xxx')
+                    # ,textInput('WebapiDBschema','WebAPI DB Schema','',placeholder = 'yourWebAPIDb.schema')
                     ,uiOutput("country_list")
                     #input text to db information
                     ,actionButton("db_load","Load DB")
@@ -177,6 +182,31 @@ shinyApp(
   #define server for dataset handling and spatial statistical calculation
   server <- function(input, output,session)
   {
+    ##### 0. JWT certification ################
+    observe({
+
+      query <<- parseQueryString(session$clientData$url_search)
+
+      if(is.null(query$verify_token)){}
+      else{
+        pubkey <- openssl::read_pubkey('/root/aegis/key/PKI_Public.ppk')
+        conData <- jose::jwt_decode_sig(query$verify_token, pubkey)
+        if(!is.integer(grep(',',conData$username))){
+          userAuth <<- lapply(conData, function(x) unlist(strsplit(x,split = ',')))
+        }
+        else{
+          userAuth <<- conData
+        }
+        updateSelectInput(session, "cdm",
+                          label = paste("Select CDM", length(userAuth$cdb_schema)),
+                          choices = userAuth$cdb_schema,
+                          selected = tail(userAuth$cdb_schema, 1)
+        )
+      }
+    })
+
+    ###########################################
+
     #country list
     output$country_list <- renderUI({
       output$country_list <- renderUI({
@@ -187,13 +217,16 @@ shinyApp(
 
     ################
     render.preTable <- eventReactive(input$db_load,{
-      connectionDetails <<- DatabaseConnector::createConnectionDetails(dbms=input$sqltype,
-                                                                       server=input$ip,
-                                                                       schema=input$Resultschema,
-                                                                       user=input$usr,
-                                                                       password=input$pw)
+      cdmIndex <- grep(input$cdm,userAuth$cdb_schema)
+
+      connectionDetails <<- DatabaseConnector::createConnectionDetails(dbms= userAuth$sql_type[[cdmIndex]]
+                                                                       , server= userAuth$ip_address[[cdmIndex]]
+                                                                       , schema= userAuth$cdb_schema[[cdmIndex]]
+                                                                       , user= userAuth$username[[cdmIndex]]
+                                                                       , password= userAuth$password[[cdmIndex]])
       connection <<- DatabaseConnector::connect(connectionDetails)
 
+      maxLevel <<-2
       GADM <<- GIS.download(input$country, maxLevel)
       preTable <<- PIP(input$CDMschema, maxLevel, input$country)
       country <<- input$country
@@ -312,7 +345,7 @@ shinyApp(
     ####################
 
     cohort_listup <- eventReactive(input$db_load, {
-      cohort_list <<- Call.Cohortlist(input$WebapiDBserver,input$WebapiDBschema,input$Resultschema)
+      cohort_list <<- Call.Cohortlist(userAuth$ip_address[[cdmIndex]],userAuth$webapi_ip[[cdmIndex]],userAuth$webapi_schema[[cdmIndex]],userAuth$cdb_schema[[cdmIndex]])
     })
 
     output$sqltype <- renderUI({
@@ -362,7 +395,7 @@ shinyApp(
 
 
       cdmDatabaseSchema <<- input$CDMschema
-      resultDatabaseSchema <<- input$Resultschema
+      resultDatabaseSchema <<- userAuth$cdb_schema[[cdmIndex]]
       startdt <<- input$dateRange[1]
       enddt <<- input$dateRange[2]
       timeatrisk_startdt <<- input$GIS.timeatrisk_startdt
@@ -370,7 +403,7 @@ shinyApp(
       timeatrisk_enddt_panel <<- input$GIS.timeatrisk_enddt_panel
 
       #Conditional input cohort number
-      CDM.table <<- GIS.extraction(connectionDetails,input$CDMschema, input$Resultschema, targettab="cohort", input$dateRange[1], input$dateRange[2],
+      CDM.table <<- GIS.extraction(connectionDetails,input$CDMschema, userAuth$cdb_schema[[cdmIndex]], targettab="cohort", input$dateRange[1], input$dateRange[2],
                                    tcdi, ocdi, input$fraction, input$GIS.timeatrisk_startdt, input$GIS.timeatrisk_enddt, input$GIS.timeatrisk_enddt_panel, maxLevel)
 
       table <- dplyr::left_join(CDM.table, GADM.table, by=c("gadm_id" = "ID_2"))
