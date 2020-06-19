@@ -217,7 +217,7 @@ shinyApp(
 
     ################
     render.preTable <- eventReactive(input$db_load,{
-      cdmIndex <- grep(input$cdm,userAuth$cdb_schema)
+      cdmIndex <<- grep(input$cdm,userAuth$cdb_schema)
 
       connectionDetails <<- DatabaseConnector::createConnectionDetails(dbms= userAuth$sql_type[[cdmIndex]]
                                                                        , server= userAuth$ip_address[[cdmIndex]]
