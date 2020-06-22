@@ -106,7 +106,7 @@
               when b.gender_concept_id = '8532' then 1
           end as sex_cat
        into #person_temp2
-       from #person_temp a left join @resultDatabaseSchema.person b
+       from #person_temp a left join @cdmDatabaseSchema.person b
        on a.subject_id=b.person_id
        ---- end of setting for person_cohort
 
