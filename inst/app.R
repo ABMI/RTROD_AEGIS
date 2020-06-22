@@ -363,12 +363,12 @@ shinyApp(
 
     output$cohort_tcdi <- renderUI({
       cohort_list <- cohort_listup()
-      selectInput("tcdi", "Select target cohort", choices = cohort_list)
+      selectInput("tcdi", "Select target cohort", choices = c('',cohort_list))
     })
 
     output$cohort_ocdi <- renderUI({
       cohort_list <- cohort_listup()
-      selectInput("ocdi", "Select target cohort", choices = cohort_list)
+      selectInput("ocdi", "Select target cohort", choices = c('',cohort_list))
     })
 
 
