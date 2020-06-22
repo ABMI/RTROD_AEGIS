@@ -71,7 +71,7 @@
 
      select distinct a.subject_id, b.fact_id_2, a.age_cat, a.sex_cat
        into #including_cohort3
-       from #including_cohort2 a join @resultDatabaseSchema.fact_relationship b on a.location_id=b.fact_id_1
+       from #including_cohort2 a join @cdmDatabaseSchema.fact_relationship b on a.location_id=b.fact_id_1
        where b.domain_concept_id_1 = 4083586
        order by b.fact_id_2, a.age_cat, a.sex_cat
        ---- end of setting for including cohort
