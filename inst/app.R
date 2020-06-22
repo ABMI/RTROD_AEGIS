@@ -228,7 +228,7 @@ shinyApp(
 
       maxLevel <<-2
       GADM <<- GIS.download(input$country, maxLevel)
-      preTable <<- PIP(input$CDMschema, maxLevel, input$country)
+      preTable <<- PIP(userAuth$cdb_schema[[cdmIndex]], maxLevel, input$country)
       country <<- input$country
       preTable
     })
@@ -274,7 +274,7 @@ shinyApp(
       cast(location_id as int) as location_id from @cdmDatabaseSchema.person
       where location_id in (@idxList)"
       sql <- SqlRender::renderSql(sql,
-                                  cdmDatabaseSchema=input$CDMschema,
+                                  cdmDatabaseSchema=userAuth$cdb_schema[[cdmIndex]],
                                   idxList=idxList)$sql
       sql <- SqlRender::translateSql(sql,
                                      targetDialect=connectionDetails$dbms)$sql
@@ -394,7 +394,7 @@ shinyApp(
       ocdi <<- substr(input$ocdi,1,gregexpr(' ',input$ocdi)[[1]][1]-1)
 
 
-      cdmDatabaseSchema <<- input$CDMschema
+      cdmDatabaseSchema <<- userAuth$cdb_schema[[cdmIndex]]
       resultDatabaseSchema <<- userAuth$cdb_schema[[cdmIndex]]
       startdt <<- input$dateRange[1]
       enddt <<- input$dateRange[2]
@@ -403,7 +403,7 @@ shinyApp(
       timeatrisk_enddt_panel <<- input$GIS.timeatrisk_enddt_panel
 
       #Conditional input cohort number
-      CDM.table <<- GIS.extraction(connectionDetails,input$CDMschema, userAuth$cdb_schema[[cdmIndex]], targettab="cohort", input$dateRange[1], input$dateRange[2],
+      CDM.table <<- GIS.extraction(connectionDetails,userAuth$cdb_schema[[cdmIndex]], userAuth$cdb_result[[cdmIndex]], targettab="cohort", input$dateRange[1], input$dateRange[2],
                                    tcdi, ocdi, input$fraction, input$GIS.timeatrisk_startdt, input$GIS.timeatrisk_enddt, input$GIS.timeatrisk_enddt_panel, maxLevel)
 
       table <- dplyr::left_join(CDM.table, GADM.table, by=c("gadm_id" = "ID_2"))
