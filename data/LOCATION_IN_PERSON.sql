@@ -66,7 +66,7 @@
                             when b.gender_concept_id = '8532' then 1
                      end as sex_cat
        into #including_cohort2
-       from #including_cohort a join @resultDatabaseSchema.person b
+       from #including_cohort a join @cdmDatabaseSchema.person b
        on a.subject_id=b.person_id
 
      select distinct a.subject_id, b.fact_id_2, a.age_cat, a.sex_cat
