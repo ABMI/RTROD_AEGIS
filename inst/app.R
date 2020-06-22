@@ -345,7 +345,7 @@ shinyApp(
     ####################
 
     cohort_listup <- eventReactive(input$db_load, {
-      cohort_list <<- Call.Cohortlist(userAuth$ip_address[[cdmIndex]],userAuth$webapi_ip[[cdmIndex]],userAuth$webapi_schema[[cdmIndex]],userAuth$cdb_schema[[cdmIndex]])
+      cohort_list <<- Call.Cohortlist(userAuth$ip_address[[cdmIndex]],userAuth$webapi_ip[[cdmIndex]],userAuth$webapi_schema[[cdmIndex]],userAuth$cdb_result[[cdmIndex]])
     })
 
     output$sqltype <- renderUI({
