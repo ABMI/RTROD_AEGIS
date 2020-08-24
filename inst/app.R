@@ -42,6 +42,8 @@ packages(leafpop)
 packages(openssl)
 packages(jose)
 
+country <<- 'South Korea'
+
 #INLA package is very heavy
 #So, INLA packages must be downloaded separately
 if(isTRUE(which(installed.packages()[,1] %in% "INLA")>1)){
